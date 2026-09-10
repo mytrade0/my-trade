@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মাই ট্রেডিং মার্কেট</title>
+    <!-- Lightweight Charts Library -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #0f141e;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: #1a2230;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a3548;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00e676;
+        }
+        .price-display {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #chart-container {
+            flex: 1;
+            width: 100%;
+        }
+        .controls {
+            background-color: #1a2230;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            border-top: 1px solid #2a3548;
+        }
+        .btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-up {
+            background-color: #00e676;
+            color: #000;
+        }
+        .btn-up:hover {
+            background-color: #00c853;
+        }
+        .btn-down {
+            background-color: #ff5252;
+            color: #fff;
+        }
+        .btn-down:hover {
+            background-color: #d50000;
+        }
+        .btn-auto {
+            background-color: #29b6f6;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">MY-MARKET OTC</div>
+        <div class="price-display">প্রাইস: <span id="current-price">100.00</span></div>
+    </header>
+
+    <!-- চার্ট রেন্ডার হওয়ার কন্টেইনার -->
+    <div id="chart-container"></div>
+
+    <!-- ডিরেকশন কন্ট্রোল প্যানেল -->
+    <div class="controls">
+        <button class="btn btn-up" onclick="setDirection('up')">UP (উপরে যাবে)</button>
+        <button class="btn btn-auto" onclick="setDirection('auto')">Auto (স্বাভাবিক)</button>
+        <button class="btn btn-down" onclick="setDirection('down')">DOWN (নিচে যাবে)</button>
+    </div>
+
+    <script>
+        // ১. চার্ট ইনিশিয়ালাইজেশন
+        const chartContainer = document.getElementById('chart-container');
+        const chart = LightweightCharts.createChart(chartContainer, {
+            layout: {
+                backgroundColor: '#0f141e',
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: '#1f293d' },
+                horzLines: { color: '#1f293d' },
+            },
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: true,
+            },
+        });
+
+        const candlestickSeries = chart.addCandlestickSeries({
+            upColor: '#00e676',
+            downColor: '#ff5252',
+            borderVisible: false,
+            wickUpColor: '#00e676',
+            wickDownColor: '#ff5252',
+        });
+
+        // রেসপন্সিভ সাইজ
+        window.addEventListener('resize', () => {
+            chart.applyOptions({ width: chartContainer.clientWidth, height: chartContainer.clientHeight });
+        });
+        chart.applyOptions({ width: chartContainer.clientWidth, height: chartContainer.clientHeight });
+
+        // ২. প্রারম্ভিক ডেটা ও ভেরিয়েবল
+        let lastPrice = 100.00;
+        let currentTime = Math.floor(Date.now() / 1000) - 300;
+        let currentDirection = 'auto'; // 'up', 'down', or 'auto'
+
+        let initialData = [];
+        for (let i = 0; i < 50; i++) {
+            let open = lastPrice;
+            let close = open + (Math.random() - 0.5) * 2;
+            let high = Math.max(open, close) + Math.random();
+            let low = Math.min(open, close) - Math.random();
+            lastPrice = close;
+            currentTime += 5;
+            initialData.push({ time: currentTime, open, high, low, close });
+        }
+        candlestickSeries.setData(initialData);
+
+        // ৩. ডিরেকশন পরিবর্তন ফাংশন
+        function setDirection(dir) {
+            currentDirection = dir;
+        }
+
+        // ৪. রিয়েল-টাইম ক্যান্ডেল আপডেট (প্রতি ১ সেকেন্ডে)
+        setInterval(() => {
+            let now = Math.floor(Date.now() / 1000);
+            let change = (Math.random() * 0.5);
+
+            // ডিরেকশন লজিক
+            if (currentDirection === 'up') {
+                lastPrice += change;
+            } else if (currentDirection === 'down') {
+                lastPrice -= change;
+            } else {
+                lastPrice += (Math.random() - 0.48) * 0.8; // স্বাভাবিক ওঠানামা
+            }
+
+            let open = lastPrice - (Math.random() - 0.5) * 0.2;
+            let high = Math.max(open, lastPrice) + Math.random() * 0.2;
+            let low = Math.min(open, lastPrice) - Math.random() * 0.2;
+
+            document.getElementById('current-price').innerText = lastPrice.toFixed(2);
+
+            candlestickSeries.update({
+                time: now,
+                open: open,
+                high: high,
+                low: low,
+                close: lastPrice
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
+
